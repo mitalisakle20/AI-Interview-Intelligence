@@ -3,6 +3,7 @@ import React from 'react';
 export default function BriefView({ session }) {
     const brief = session?.interviewerBrief || {};
     const analysis = session?.analysisResults || {};
+    const feedback = session?.feedback || null;
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -16,6 +17,47 @@ export default function BriefView({ session }) {
             </div>
 
             <div className="p-8 space-y-12">
+
+                {/* Interviewee Feedback Section */}
+                {feedback && (
+                    <section className="bg-amber-50 rounded-xl p-6 border-2 border-amber-200 shadow-sm relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-2 h-full bg-amber-500"></div>
+                        <h3 className="text-xl font-bold text-amber-900 mb-4 flex items-center gap-2">
+                            <span className="bg-amber-100 text-amber-800 p-1.5 rounded-full">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+                            </span>
+                            Direct Interviewee Feedback
+                        </h3>
+
+                        <div className="space-y-6">
+                            {feedback.corrections && (
+                                <div>
+                                    <h4 className="font-semibold text-amber-900 text-sm uppercase tracking-wider mb-2">Corrections & Clarifications</h4>
+                                    <div className="bg-white p-4 rounded-lg border border-amber-100 text-sm text-gray-800 whitespace-pre-wrap">
+                                        "{feedback.corrections}"
+                                    </div>
+                                </div>
+                            )}
+
+                            {feedback.selectedQuestions && feedback.selectedQuestions.length > 0 && (
+                                <div>
+                                    <h4 className="font-semibold text-amber-900 text-sm uppercase tracking-wider mb-2">Preferred Discussion Topics</h4>
+                                    <ul className="space-y-3">
+                                        {feedback.selectedQuestions.map((q, i) => (
+                                            <li key={i} className="bg-white p-4 rounded-lg border border-amber-100 shadow-sm flex items-start gap-3">
+                                                <span className="text-amber-500 font-bold mt-0.5">•</span>
+                                                <div>
+                                                    <p className="font-bold text-gray-900">{q.question}</p>
+                                                    <p className="text-xs text-gray-500 mt-1 italic">{q.rationale}</p>
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    </section>
+                )}
 
                 {/* Company Profile Section */}
                 <section>

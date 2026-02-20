@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { api } from '../services/api';
 import IntervieweePacket from '../components/IntervieweePacket';
 import FeedbackForm from '../components/FeedbackForm';
+import PdfDownloadButton from '../components/PdfDownloadButton';
 
 export default function IntervieweePortal() {
     const { id } = useParams();
@@ -68,7 +69,10 @@ export default function IntervieweePortal() {
         <div className="min-h-screen bg-gray-50 p-4 py-8 md:p-12">
             <div className="max-w-4xl mx-auto">
                 <div className="mb-8 p-6 bg-white rounded-xl shadow-sm border border-gray-200">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-4">Pre-Interview Material</h1>
+                    <div className="flex justify-between items-start mb-4">
+                        <h1 className="text-3xl font-bold text-gray-900">Pre-Interview Material</h1>
+                        <PdfDownloadButton targetId="packet-content" filename="Interview_Packet.pdf" />
+                    </div>
                     <p className="text-gray-600 leading-relaxed">
                         Welcome! To ensure our upcoming conversation is as productive and tailored to your interests as possible, we have used an AI assistant to research <strong>{session.companyName}</strong>.
                         <br /><br />
@@ -76,7 +80,9 @@ export default function IntervieweePortal() {
                     </p>
                 </div>
 
-                <IntervieweePacket session={session} />
+                <div id="packet-content">
+                    <IntervieweePacket session={session} />
+                </div>
 
                 {isComplete ? (
                     <div className="bg-green-50 border border-green-200 text-green-800 p-8 rounded-xl text-center shadow-sm">
