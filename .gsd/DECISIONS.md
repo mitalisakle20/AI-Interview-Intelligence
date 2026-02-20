@@ -81,3 +81,21 @@
 **Decision**: Handle API Gateway 29s timeouts using Step Functions async execution and frontend polling.
 **Rationale**: Professional approach for serverless AI workloads. API Gateway triggers Step Functions and immediately returns an execution ID (202 Accepted/200 OK). Frontend polls a status endpoint until complete.
 
+---
+
+## Phase 4 Decisions (from `/discuss-phase 4`)
+
+### ADR-014: Frontend Styling & Layout
+**Date**: 2026-02-20
+**Decision**: Tailwind CSS formatted Desktop-first with Texas A&M Maroon (`#500000`) brand theme.
+**Rationale**: Tailwind enables rapid styling inline. Desktop-first targets the primary form-factor for interview preparation. The Maroon color scheme adds polish and institutional alignment.
+
+### ADR-015: Server-Side PDF Generation
+**Date**: 2026-02-20
+**Decision**: Use a Python Lambda function to generate PDFs (Option Y), utilizing a library like `xhtml2pdf` to convert HTML strings to PDF buffers and return as base64 or via S3.
+**Rationale**: Offloads heavy processing from the client browser. Ensures PDFs are rendered consistently regardless of the user's viewport or device limits.
+
+### ADR-016: Non-Destructive Interviewee Feedback
+**Date**: 2026-02-20
+**Decision**: Create a new `POST /session/{id}/feedback` endpoint to capture the interviewee's corrections/question selections, and display this data at the top of the existing Interviewer Guide in the UI.
+**Rationale**: Avoids the high cost and latency of re-triggering a full Bedrock AI rewrite of the guide. Safest approach for a fast hackathon demo.
