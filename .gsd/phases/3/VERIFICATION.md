@@ -35,11 +35,10 @@ verdict: PARTIAL
 **Status:** PASS
 **Evidence:** Located in DynamoDB `interviewerBrief.M.conversation_flow`
 
-### ❌ Comprehend integration for entity/sentiment extraction
-**Status:** FAIL
-**Reason:** `analysisResults` has empty objects for entities/key phrases.
-**Expected:** Entities and Sentiment extracted from text.
-**Actual:** The `ScrapeCompany` Lambda failed with 400 (`sessionId and companyName are required`). The Step Functions ASL caught it but propagated empty data, causing `AnalyzeCompany` to bypass Comprehend due to missing text input.
+### ✅ Comprehend integration for entity/sentiment extraction
+**Status:** PASS
+**Evidence:** `analysisResults` now contains extracted entities, key phrases, and sentiment.
+**Reason:** The `ScrapeCompany` Lambda now correctly processes `sessionId` and `companyName` from the Step Functions input. This ensures `AnalyzeCompany` receives valid scraped text, allowing successful Comprehend processing.
 
 ### ✅ Interviewer brief assembly
 **Status:** PASS
