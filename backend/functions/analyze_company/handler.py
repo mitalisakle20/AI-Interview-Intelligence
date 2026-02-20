@@ -77,12 +77,17 @@ def lambda_handler(event: dict, context) -> dict:
         nlp = ComprehendService()
         analysis = nlp.analyze_text(text)
 
+        # Apply Decimal casting for DynamoDB
+        import json
+        from decimal import Decimal
+        analysis_for_db = json.loads(json.dumps(analysis), parse_float=Decimal)
+
         # Update session with analysis results
         db = DynamoDBService()
         session = db.get_session(session_id)
         if session:
             db.update_session(session_id, session["createdAt"], {
-                "analysisResults": analysis,
+                "analysisResults": analysis_for_db,
                 "status": "ANALYSIS_COMPLETE",
             })
 
