@@ -1,120 +1,79 @@
-/**
- * API Service — Frontend client for InterviewIQ backend.
- * 
- * Provides typed functions for all API endpoints. Handles JSON
- * serialization, error handling, and base URL configuration.
- * 
- * Usage:
- *   import api from '../services/api';
- *   const session = await api.createSession('GridFlex Energy', 'https://...');
- * 
- * @module api
- */
-
-/** Base URL for the API — configured per environment */
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://l8xc3yrptf.execute-api.us-west-2.amazonaws.com/dev';
 
 /**
- * Make an HTTP request to the API.
- * 
- * @param {string} endpoint - API path (e.g., '/sessions').
- * @param {Object} options - Fetch options.
- * @param {string} [options.method='GET'] - HTTP method.
- * @param {Object} [options.body] - Request body (auto-serialized to JSON).
- * @returns {Promise<Object>} Parsed JSON response.
- * @throws {Error} If the request fails or returns an error status.
+ * Enhanced fetch wrapper for the Backend API
  */
-async function request(endpoint, { method = 'GET', body } = {}) {
-    const config = {
-        method,
-        headers: { 'Content-Type': 'application/json' },
+async function apiFetch(endpoint, options = {}) {
+    const url = `${API_BASE_URL}${endpoint}`;
+
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers,
     };
 
-    if (body) {
-        config.body = JSON.stringify(body);
-    }
+    const response = await fetch(url, { ...options, headers });
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-    const data = await response.json();
-
+    // Keep the response around for pdf logic if needed
     if (!response.ok) {
-        throw new Error(data.error || `API error: ${response.status}`);
+        let errorMsg = `API Error: ${response.status}`;
+        try {
+            const errorData = await response.json();
+            if (errorData.message) errorMsg = errorData.message;
+            else if (errorData.error) errorMsg = errorData.error;
+        } catch (e) {
+            // Ignored
+        }
+        throw new Error(errorMsg);
     }
 
-    return data;
+    return response;
 }
 
-/**
- * InterviewIQ API client.
- * @namespace api
- */
-const api = {
+export const api = {
     /**
-     * Create a new interview preparation session.
-     * 
-     * @param {string} companyName - Name of the target company.
-     * @param {string} [companyUrl] - Optional company website URL.
-     * @returns {Promise<Object>} Created session with sessionId.
+     * Triggers the AI pipeline to analyze a company.
      */
-    createSession: (companyName, companyUrl) =>
-        request('/sessions', {
+    async triggerPipeline(companyName, companyUrl) {
+        const payload = { companyName };
+        if (companyUrl) payload.companyUrl = companyUrl;
+
+        const res = await apiFetch('/pipeline', {
             method: 'POST',
-            body: { companyName, companyUrl },
-        }),
+            body: JSON.stringify(payload)
+        });
+        return await res.json();
+    },
 
     /**
-     * Retrieve session data by ID.
-     * 
-     * @param {string} sessionId - The session identifier.
-     * @returns {Promise<Object>} Full session data.
+     * Retrieves an existing session by ID.
      */
-    getSession: (sessionId) =>
-        request(`/sessions/${sessionId}`),
+    async getSession(sessionId) {
+        const res = await apiFetch(`/sessions/${sessionId}`, {
+            method: 'GET'
+        });
+        return await res.json();
+    },
 
     /**
-     * Start the full interview intelligence pipeline.
-     * 
-     * @param {string} companyName - Company name.
-     * @param {string} [companyUrl] - Optional company URL.
-     * @param {string[]} [documents] - Optional S3 keys of uploaded documents.
-     * @returns {Promise<Object>} Pipeline execution details.
+     * Submits interviewee corrections and selected questions.
      */
-    startPipeline: (companyName, companyUrl, documents = []) =>
-        request('/pipeline', {
+    async submitFeedback(sessionId, corrections, selectedQuestions) {
+        const res = await apiFetch(`/sessions/${sessionId}/feedback`, {
             method: 'POST',
-            body: { companyName, companyUrl, documents },
-        }),
+            body: JSON.stringify({ corrections, selectedQuestions })
+        });
+        return await res.json();
+    },
 
     /**
-     * Check pipeline execution status.
-     * 
-     * @param {string} executionId - Pipeline execution ID.
-     * @returns {Promise<Object>} Execution status and output.
+     * Sends an HTML string to the GeneratePdf Lambda and returns the Base64 result.
      */
-    getPipelineStatus: (executionId) =>
-        request(`/pipeline/${executionId}`),
-
-    /**
-     * Submit interviewee feedback (corrections and question selection).
-     * 
-     * @param {string} sessionId - The session identifier.
-     * @param {Object[]} corrections - List of AI finding corrections.
-     * @param {string[]} selectedQuestions - IDs of selected questions.
-     * @param {string} [notes] - Optional free-form notes.
-     * @returns {Promise<Object>} Confirmation of stored feedback.
-     */
-    submitFeedback: (sessionId, corrections, selectedQuestions, notes) =>
-        request(`/sessions/${sessionId}/feedback`, {
+    async generatePdf(htmlContent) {
+        const res = await apiFetch('/pdf', {
             method: 'POST',
-            body: { corrections, selectedQuestions, notes },
-        }),
-
-    /**
-     * Check API health status.
-     * 
-     * @returns {Promise<Object>} Health check response.
-     */
-    healthCheck: () => request('/health'),
+            body: JSON.stringify({ html_content: htmlContent })
+        });
+        const blob = await res.blob();
+        return blob;
+    }
 };
-
-export default api;

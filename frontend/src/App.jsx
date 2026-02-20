@@ -1,42 +1,43 @@
-/**
- * InterviewIQ — AI-Powered Interview Intelligence System
- * 
- * Main application component with React Router configuration.
- * Routes users between the home page, interviewer dashboard,
- * interviewee portal, and interview guide views.
- * 
- * @module App
- */
-
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Layout from './components/Layout';
-import HomePage from './pages/HomePage';
-import InterviewerDashboard from './pages/InterviewerDashboard';
-import IntervieweePortal from './pages/IntervieweePortal';
-import InterviewGuide from './pages/InterviewGuide';
 
-/**
- * Root application component.
- * 
- * Configures client-side routing for the four main views:
- * - `/` — Home page with company input form
- * - `/dashboard/:sessionId` — Interviewer brief view
- * - `/interview/:sessionId` — Interviewee review portal
- * - `/guide/:sessionId` — Updated interview guide with feedback
- * 
- * @returns {JSX.Element} The rendered application.
- */
+// Placeholder Pages
+const InterviewerSetup = () => (
+  <div className="min-h-screen flex items-center justify-center p-4">
+    <h1 className="text-3xl font-bold text-maroon-600">Interviewer Setup (Route: /)</h1>
+  </div>
+);
+
+const InterviewerDashboard = () => (
+  <div className="min-h-screen p-8">
+    <h1 className="text-2xl font-bold text-maroon-600">Interviewer Dashboard (Route: /session/:id)</h1>
+  </div>
+);
+
+const IntervieweePortal = () => (
+  <div className="min-h-screen p-8">
+    <h1 className="text-2xl font-bold text-blue-600">Interviewee Portal (Route: /interviewee/:id)</h1>
+  </div>
+);
+
 function App() {
   return (
     <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/dashboard/:sessionId" element={<InterviewerDashboard />} />
-          <Route path="/interview/:sessionId" element={<IntervieweePortal />} />
-          <Route path="/guide/:sessionId" element={<InterviewGuide />} />
-        </Routes>
-      </Layout>
+      <div className="app-container bg-gray-50 text-gray-900 font-sans min-h-screen">
+        <header className="bg-white shadow">
+          <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <h1 className="text-3xl font-bold tracking-tight text-maroon-700">InterviewIQ</h1>
+          </div>
+        </header>
+
+        <main>
+          <Routes>
+            <Route path="/" element={<InterviewerSetup />} />
+            <Route path="/session/:id" element={<InterviewerDashboard />} />
+            <Route path="/interviewee/:id" element={<IntervieweePortal />} />
+          </Routes>
+        </main>
+      </div>
     </Router>
   );
 }
