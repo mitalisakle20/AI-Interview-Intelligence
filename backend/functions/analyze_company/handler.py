@@ -19,6 +19,7 @@ Response:
 
 import os
 import json
+import json
 import logging
 
 logger = logging.getLogger()
@@ -78,7 +79,6 @@ def lambda_handler(event: dict, context) -> dict:
         analysis = nlp.analyze_text(text)
 
         # Apply Decimal casting for DynamoDB
-        import json
         from decimal import Decimal
         analysis_for_db = json.loads(json.dumps(analysis), parse_float=Decimal)
 
