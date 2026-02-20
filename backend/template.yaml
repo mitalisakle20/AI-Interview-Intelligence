@@ -199,6 +199,22 @@ Resources:
             Path: /sessions/{sessionId}
             Method: get
 
+  # Generate PDF from HTML
+  GeneratePdfFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: interview-iq-generate-pdf
+      Description: "Generates a PDF buffer from an HTML string via xhtml2pdf"
+      CodeUri: functions/generate_pdf/
+      Handler: handler.lambda_handler
+      Events:
+        GeneratePdf:
+          Type: Api
+          Properties:
+            RestApiId: !Ref InterviewIQApi
+            Path: /pdf
+            Method: post
+
   # Trigger web scraping for a company
   ScrapeFunction:
     Type: AWS::Serverless::Function
