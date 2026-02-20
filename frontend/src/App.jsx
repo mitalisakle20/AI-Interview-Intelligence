@@ -1,18 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-// Placeholder Pages
-const InterviewerSetup = () => (
-  <div className="min-h-screen flex items-center justify-center p-4">
-    <h1 className="text-3xl font-bold text-maroon-600">Interviewer Setup (Route: /)</h1>
-  </div>
-);
-
-const InterviewerDashboard = () => (
-  <div className="min-h-screen p-8">
-    <h1 className="text-2xl font-bold text-maroon-600">Interviewer Dashboard (Route: /session/:id)</h1>
-  </div>
-);
+import InterviewerSetup from './pages/InterviewerSetup';
+import InterviewerDashboard from './pages/InterviewerDashboard';
 
 const IntervieweePortal = () => (
   <div className="min-h-screen p-8">

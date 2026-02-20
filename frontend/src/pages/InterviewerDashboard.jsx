@@ -1,292 +1,108 @@
-/**
- * Interviewer Dashboard — View the AI-generated interview brief.
- * 
- * Displays the complete interview preparation package for the
- * interviewer, including company profile, questions, and
- * conversation flow suggestions.
- * 
- * Route: /dashboard/:sessionId
- * @module InterviewerDashboard
- */
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { api } from '../services/api';
+import BriefView from '../components/BriefView';
 
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import api from '../services/api';
-
-/**
- * Interviewer dashboard component.
- * 
- * @returns {JSX.Element} The rendered dashboard.
- */
-function InterviewerDashboard() {
-    const { sessionId } = useParams();
+export default function InterviewerDashboard() {
+    const { id } = useParams();
     const [session, setSession] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        loadSession();
-    }, [sessionId]);
+        let intervalId;
 
-    /** Load session data from the API. */
-    const loadSession = async () => {
-        try {
-            const data = await api.getSession(sessionId);
-            setSession(data);
-        } catch (err) {
-            setError(err.message || 'Failed to load session');
-        } finally {
-            setLoading(false);
-        }
-    };
+        // Poll the session endpoint to get status updates
+        const pollSession = async () => {
+            try {
+                const data = await api.getSession(id);
+                setSession(data);
 
-    if (loading) {
-        return (
-            <div className="container animate-fade-in" style={styles.page}>
-                <div style={styles.loadingContainer}>
-                    <div className="animate-pulse" style={styles.loadingEmoji}>🧠</div>
-                    <h2>Generating Interview Intelligence...</h2>
-                    <p style={styles.loadingText}>
-                        Scraping company data, analyzing with AI, and crafting your brief.
-                    </p>
-                    <div style={styles.stages}>
-                        {['Scraping web data', 'Analyzing with NLP', 'Generating questions', 'Building brief'].map((stage, i) => (
-                            <div key={i} style={styles.stage}>
-                                <div className="skeleton" style={{ width: '100%', height: '8px', borderRadius: '4px' }} />
-                                <span style={styles.stageLabel}>{stage}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        );
-    }
+                // Stop polling if we reached a terminal state
+                if (data.status === 'READY' || data.status === 'FEEDBACK_RECEIVED' || data.status === 'FAILED') {
+                    clearInterval(intervalId);
+                }
+            } catch (err) {
+                console.error("Polling error", err);
+                setError("Failed to fetch session. The AI execution may have failed or timed out.");
+                clearInterval(intervalId);
+            }
+        };
+
+        // Initial fetch immediately
+        pollSession();
+
+        // Check every 5 seconds
+        intervalId = setInterval(pollSession, 5000);
+
+        return () => clearInterval(intervalId);
+    }, [id]);
 
     if (error) {
         return (
-            <div className="container animate-fade-in" style={styles.page}>
-                <div className="card" style={styles.errorCard}>
-                    <h2>⚠️ Error</h2>
+            <div className="min-h-screen bg-gray-50 p-8">
+                <div className="max-w-4xl mx-auto bg-red-50 text-red-700 p-6 rounded-xl border border-red-200">
+                    <h2 className="text-xl font-bold mb-2">Analysis Failed</h2>
                     <p>{error}</p>
-                    <Link to="/" className="btn btn-primary">← Try Again</Link>
                 </div>
             </div>
         );
     }
 
-    return (
-        <div className="container animate-fade-in" style={styles.page}>
-            {/* Header */}
-            <div style={styles.header}>
-                <div>
-                    <div className="badge badge-primary" id="session-status">
-                        {session?.status || 'Loading'}
-                    </div>
-                    <h1 style={styles.title}>{session?.companyName || 'Company'}</h1>
-                    <p style={styles.sessionId}>Session: {sessionId.slice(0, 8)}...</p>
-                </div>
-                <div style={styles.actions}>
-                    <Link
-                        to={`/interview/${sessionId}`}
-                        className="btn btn-secondary"
-                        id="send-to-interviewee-btn"
-                    >
-                        📤 Send to Interviewee
-                    </Link>
-                </div>
+    if (!session) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8">
+                <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-maroon-600 mb-4"></div>
+                <h2 className="text-xl font-bold text-gray-700">Connecting to Pipeline...</h2>
             </div>
+        );
+    }
 
-            {/* Brief Content */}
-            <div style={styles.grid}>
-                {/* Company Profile */}
-                <div className="card" id="company-profile-card">
-                    <h3 style={styles.sectionTitle}>🏢 Company Profile</h3>
-                    <p style={styles.sectionContent}>
-                        {session?.interviewerBrief?.executive_summary ||
-                            'Company profile will appear here once the pipeline completes.'}
-                    </p>
-                </div>
+    const isGenerating = session.status !== 'READY' && session.status !== 'FEEDBACK_RECEIVED';
 
-                {/* Questions */}
-                <div className="card" id="questions-card">
-                    <h3 style={styles.sectionTitle}>❓ Interview Questions</h3>
-                    {session?.interviewerBrief?.questions?.length > 0 ? (
-                        <ul style={styles.questionList}>
-                            {session.interviewerBrief.questions.map((q, i) => (
-                                <li key={i} style={styles.question}>
-                                    <span style={styles.questionNum}>{i + 1}</span>
-                                    <span>{q.question || q}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p style={styles.placeholder}>Questions will be generated by AI...</p>
-                    )}
-                </div>
+    return (
+        <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+            <div className="max-w-5xl mx-auto space-y-6">
 
-                {/* Analysis */}
-                <div className="card" id="analysis-card">
-                    <h3 style={styles.sectionTitle}>📊 NLP Analysis</h3>
-                    <div style={styles.analysisGrid}>
-                        <div>
-                            <h4 style={styles.analysisLabel}>Key Entities</h4>
-                            <p style={styles.analysisValue}>
-                                {session?.analysisResults?.entities?.length || 0} detected
-                            </p>
+                {/* Header Ribbon */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900 border-l-4 border-maroon-600 pl-3">
+                            {session.companyName}
+                        </h1>
+                        <div className="mt-2 text-sm text-gray-500 font-mono">
+                            Session ID: {id}
                         </div>
-                        <div>
-                            <h4 style={styles.analysisLabel}>Key Phrases</h4>
-                            <p style={styles.analysisValue}>
-                                {session?.analysisResults?.key_phrases?.length || 0} extracted
-                            </p>
-                        </div>
-                        <div>
-                            <h4 style={styles.analysisLabel}>Sentiment</h4>
-                            <p style={styles.analysisValue}>
-                                {session?.analysisResults?.sentiment?.sentiment || 'Pending'}
-                            </p>
-                        </div>
+                    </div>
+
+                    <div className="flex flex-col items-end">
+                        {isGenerating ? (
+                            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 font-semibold text-sm animate-pulse ring-1 ring-blue-200">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
+                                AI Generator Running...
+                            </span>
+                        ) : (
+                            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-50 text-green-700 font-semibold text-sm ring-1 ring-green-200">
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
+                                Pipeline Complete
+                            </span>
+                        )}
                     </div>
                 </div>
 
-                {/* Conversation Flow */}
-                <div className="card" id="conversation-flow-card">
-                    <h3 style={styles.sectionTitle}>🗣️ Conversation Flow</h3>
-                    <p style={styles.placeholder}>
-                        Suggested conversation structure will appear here.
-                    </p>
-                </div>
+                {/* Content Body */}
+                {isGenerating ? (
+                    <div className="bg-white p-12 text-center rounded-xl shadow-sm border border-gray-100 flex flex-col items-center">
+                        <div className="w-16 h-16 border-4 border-maroon-100 border-t-maroon-600 rounded-full animate-spin mb-6"></div>
+                        <h2 className="text-2xl font-bold text-gray-900">Synthesizing Brief...</h2>
+                        <p className="text-gray-500 max-w-md mx-auto mt-3">
+                            We are scraping the company site, running NLP sentiment analysis, and querying Claude to build your structured interview plan. This typically takes 30-45 seconds.
+                        </p>
+                    </div>
+                ) : (
+                    <BriefView session={session} />
+                )}
+
             </div>
         </div>
     );
 }
-
-/** @type {Object} Component styles */
-const styles = {
-    page: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--space-8)',
-    },
-    loadingContainer: {
-        textAlign: 'center',
-        padding: 'var(--space-16) 0',
-        maxWidth: '500px',
-        margin: '0 auto',
-    },
-    loadingEmoji: {
-        fontSize: '4rem',
-        marginBottom: 'var(--space-4)',
-    },
-    loadingText: {
-        color: 'var(--text-secondary)',
-        marginTop: 'var(--space-2)',
-    },
-    stages: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--space-3)',
-        marginTop: 'var(--space-8)',
-    },
-    stage: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--space-1)',
-    },
-    stageLabel: {
-        fontSize: 'var(--text-xs)',
-        color: 'var(--text-muted)',
-        textAlign: 'left',
-    },
-    errorCard: {
-        textAlign: 'center',
-        padding: 'var(--space-10)',
-        maxWidth: '500px',
-        margin: '0 auto',
-    },
-    header: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        flexWrap: 'wrap',
-        gap: 'var(--space-4)',
-    },
-    title: {
-        marginTop: 'var(--space-2)',
-        fontSize: 'var(--text-3xl)',
-    },
-    sessionId: {
-        fontSize: 'var(--text-sm)',
-        color: 'var(--text-muted)',
-        fontFamily: 'var(--font-mono)',
-    },
-    actions: {
-        display: 'flex',
-        gap: 'var(--space-3)',
-    },
-    grid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-        gap: 'var(--space-6)',
-    },
-    sectionTitle: {
-        fontSize: 'var(--text-lg)',
-        marginBottom: 'var(--space-4)',
-    },
-    sectionContent: {
-        color: 'var(--text-secondary)',
-        lineHeight: 1.7,
-    },
-    placeholder: {
-        color: 'var(--text-muted)',
-        fontStyle: 'italic',
-    },
-    questionList: {
-        listStyle: 'none',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--space-3)',
-    },
-    question: {
-        display: 'flex',
-        gap: 'var(--space-3)',
-        alignItems: 'flex-start',
-        padding: 'var(--space-3)',
-        background: 'var(--bg-tertiary)',
-        borderRadius: 'var(--radius-md)',
-        fontSize: 'var(--text-sm)',
-        color: 'var(--text-secondary)',
-    },
-    questionNum: {
-        flexShrink: 0,
-        width: '24px',
-        height: '24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'var(--color-primary-glow)',
-        color: 'var(--color-primary-light)',
-        borderRadius: 'var(--radius-full)',
-        fontSize: 'var(--text-xs)',
-        fontWeight: 700,
-    },
-    analysisGrid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: 'var(--space-4)',
-    },
-    analysisLabel: {
-        fontSize: 'var(--text-xs)',
-        color: 'var(--text-muted)',
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em',
-        marginBottom: 'var(--space-1)',
-    },
-    analysisValue: {
-        fontSize: 'var(--text-lg)',
-        fontWeight: 600,
-        color: 'var(--text-primary)',
-    },
-};
-
-export default InterviewerDashboard;
