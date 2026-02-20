@@ -67,8 +67,8 @@ def lambda_handler(event: dict, context) -> dict:
                 scraped_bytes = s3.get_document(f"scraped/{session_id}/scraped_data.json")
                 scraped_data = json.loads(scraped_bytes)
                 text = scraped_data.get("summary", {}).get("combined_content", "")
-            except Exception:
-                logger.warning("No scraped data found for session %s", session_id)
+            except Exception as e:
+                logger.error("Error loading scraped data for session %s: %s", session_id, e, exc_info=True)
 
         if not text:
             return error_response("No text available for analysis. Scrape or provide text first.", 400)
