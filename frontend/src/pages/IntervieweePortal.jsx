@@ -1,204 +1,100 @@
-/**
- * Interviewee Portal — Pre-interview review and feedback form.
- * 
- * Allows the interviewee to review AI-generated findings about
- * their company, correct inaccuracies, and select preferred
- * discussion questions before the interview.
- * 
- * Route: /interview/:sessionId
- * @module IntervieweePortal
- */
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { api } from '../services/api';
+import IntervieweePacket from '../components/IntervieweePacket';
+import FeedbackForm from '../components/FeedbackForm';
 
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import api from '../services/api';
-
-/**
- * Interviewee portal component.
- * 
- * @returns {JSX.Element} The rendered portal.
- */
-function IntervieweePortal() {
-    const { sessionId } = useParams();
-    const navigate = useNavigate();
+export default function IntervieweePortal() {
+    const { id } = useParams();
     const [session, setSession] = useState(null);
+    const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
-    const [selectedQuestions, setSelectedQuestions] = useState([]);
-    const [corrections, setCorrections] = useState([]);
-    const [notes, setNotes] = useState('');
-    const [submitted, setSubmitted] = useState(false);
 
     useEffect(() => {
-        loadSession();
-    }, [sessionId]);
-
-    /** Load session data from the API. */
-    const loadSession = async () => {
-        try {
-            const data = await api.getSession(sessionId);
-            setSession(data);
-        } catch (err) {
-            console.error('Failed to load session:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    /**
-     * Toggle question selection.
-     * @param {string} questionId - The question to toggle.
-     */
-    const toggleQuestion = (questionId) => {
-        setSelectedQuestions((prev) =>
-            prev.includes(questionId)
-                ? prev.filter((id) => id !== questionId)
-                : [...prev, questionId]
-        );
-    };
-
-    /** Submit feedback to the API. */
-    const handleSubmit = async () => {
-        setSubmitting(true);
-        try {
-            await api.submitFeedback(sessionId, corrections, selectedQuestions, notes);
-            setSubmitted(true);
-        } catch (err) {
-            console.error('Failed to submit feedback:', err);
-        } finally {
-            setSubmitting(false);
-        }
-    };
+        const fetchSession = async () => {
+            try {
+                const data = await api.getSession(id);
+                setSession(data);
+            } catch (err) {
+                console.error(err);
+                setError("Invalid secure link or session expired.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchSession();
+    }, [id]);
 
     if (loading) {
         return (
-            <div className="container animate-fade-in" style={styles.centered}>
-                <div className="animate-pulse" style={{ fontSize: '3rem' }}>📋</div>
-                <h2>Loading your pre-interview packet...</h2>
+            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-maroon-600 mb-4"></div>
+                <p className="text-gray-600">Loading your profile...</p>
             </div>
         );
     }
 
-    if (submitted) {
+    if (error || !session) {
         return (
-            <div className="container animate-fade-in" style={styles.centered}>
-                <div style={{ fontSize: '4rem', marginBottom: 'var(--space-4)' }}>✅</div>
-                <h2>Thank You!</h2>
-                <p style={{ color: 'var(--text-secondary)', marginTop: 'var(--space-2)' }}>
-                    Your feedback has been received. Your interviewer will use this
-                    to create a more focused conversation.
-                </p>
-            </div>
-        );
-    }
-
-    return (
-        <div className="container animate-fade-in" style={styles.page}>
-            {/* Header */}
-            <div style={styles.header}>
-                <h1 style={styles.title}>Pre-Interview Review</h1>
-                <p style={styles.subtitle}>
-                    Our AI researched <strong>{session?.companyName}</strong>. Please review
-                    what we found and help us prepare better questions for your interview.
-                </p>
-            </div>
-
-            {/* AI Findings */}
-            <div className="card" id="ai-findings-card">
-                <h3 style={styles.sectionTitle}>
-                    🤖 What Our AI Found
-                    <span style={styles.sectionHint}> — Please correct any inaccuracies</span>
-                </h3>
-                <div style={styles.findingsContent}>
-                    <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                        {session?.intervieweePacket?.invitation_text ||
-                            'AI findings about your company will appear here.'}
-                    </p>
+            <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
+                <div className="max-w-md w-full text-center bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+                    <div className="text-red-500 mb-4">
+                        <svg className="w-16 h-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
+                    <p className="text-gray-600">{error || "Session not found."}</p>
                 </div>
             </div>
+        );
+    }
 
-            {/* Notes */}
-            <div className="card" id="notes-card">
-                <h3 style={styles.sectionTitle}>📝 Your Notes</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-3)' }}>
-                    Anything you'd like us to know before the interview?
-                </p>
-                <textarea
-                    className="input"
-                    id="interviewee-notes"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Share any context, corrections, or topics you'd like to discuss..."
-                    rows={4}
-                    style={{ resize: 'vertical' }}
-                />
+    // Pre-interview packets need to be generated fully before interviewee is invited
+    if (session.status === 'CREATED' || session.status === 'ANALYSIS_COMPLETE') {
+        return (
+            <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-orange-200 block text-center max-w-lg">
+                    <p className="text-orange-700 font-bold mb-2">Still Generating...</p>
+                    <p className="text-gray-600">The AI is still compiling this profile. Please refresh in a few seconds.</p>
+                </div>
             </div>
+        )
+    }
 
-            {/* Submit */}
-            <div style={styles.submitSection}>
-                <button
-                    className="btn btn-primary btn-lg"
-                    id="submit-feedback-btn"
-                    onClick={handleSubmit}
-                    disabled={submitting}
-                >
-                    {submitting ? '⏳ Submitting...' : '✅ Submit Review'}
-                </button>
-                <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
-                    Your responses help create a more productive interview experience.
-                </p>
+    const isComplete = session.status === 'FEEDBACK_RECEIVED';
+
+    return (
+        <div className="min-h-screen bg-gray-50 p-4 py-8 md:p-12">
+            <div className="max-w-4xl mx-auto">
+                <div className="mb-8 p-6 bg-white rounded-xl shadow-sm border border-gray-200">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-4">Pre-Interview Material</h1>
+                    <p className="text-gray-600 leading-relaxed">
+                        Welcome! To ensure our upcoming conversation is as productive and tailored to your interests as possible, we have used an AI assistant to research <strong>{session.companyName}</strong>.
+                        <br /><br />
+                        Please review the brief summary below. If the AI missed the mark, or if there are specific strategic directions you would prefer to focus on, use the form at the bottom of the page to let us know.
+                    </p>
+                </div>
+
+                <IntervieweePacket session={session} />
+
+                {isComplete ? (
+                    <div className="bg-green-50 border border-green-200 text-green-800 p-8 rounded-xl text-center shadow-sm">
+                        <svg className="w-16 h-16 mx-auto text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <h2 className="text-2xl font-bold mb-2">Thank you!</h2>
+                        <p>Your preferences have been securely saved. We look forward to our conversation.</p>
+                    </div>
+                ) : (
+                    <FeedbackForm
+                        sessionId={id}
+                        suggestedQuestions={session.intervieweePacket?.suggested_questions || []}
+                        onFeedbackSubmitted={() => {
+                            // Optimistically update UI
+                            setSession({ ...session, status: 'FEEDBACK_RECEIVED' })
+                        }}
+                    />
+                )}
             </div>
         </div>
     );
 }
-
-/** @type {Object} Component styles */
-const styles = {
-    page: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--space-8)',
-        maxWidth: '800px',
-        margin: '0 auto',
-    },
-    centered: {
-        textAlign: 'center',
-        paddingTop: 'var(--space-16)',
-        maxWidth: '500px',
-        margin: '0 auto',
-    },
-    header: {
-        textAlign: 'center',
-    },
-    title: {
-        fontSize: 'var(--text-3xl)',
-        marginBottom: 'var(--space-3)',
-    },
-    subtitle: {
-        color: 'var(--text-secondary)',
-        fontSize: 'var(--text-lg)',
-    },
-    sectionTitle: {
-        fontSize: 'var(--text-lg)',
-        marginBottom: 'var(--space-4)',
-    },
-    sectionHint: {
-        fontSize: 'var(--text-sm)',
-        fontWeight: 400,
-        color: 'var(--text-muted)',
-    },
-    findingsContent: {
-        padding: 'var(--space-4)',
-        background: 'var(--bg-tertiary)',
-        borderRadius: 'var(--radius-md)',
-    },
-    submitSection: {
-        textAlign: 'center',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 'var(--space-3)',
-    },
-};
-
-export default IntervieweePortal;

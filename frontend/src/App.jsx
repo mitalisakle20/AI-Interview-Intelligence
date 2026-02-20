@@ -4,11 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import InterviewerSetup from './pages/InterviewerSetup';
 import InterviewerDashboard from './pages/InterviewerDashboard';
 
-const IntervieweePortal = () => (
-  <div className="min-h-screen p-8">
-    <h1 className="text-2xl font-bold text-blue-600">Interviewee Portal (Route: /interviewee/:id)</h1>
-  </div>
-);
+import IntervieweePortal from './pages/IntervieweePortal';
 
 function App() {
   return (
