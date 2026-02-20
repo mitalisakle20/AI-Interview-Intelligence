@@ -51,7 +51,12 @@ def lambda_handler(event: dict, context) -> dict:
         return error_response(f"Invalid request body: {e}", 400)
 
     session_id = body.get("sessionId")
+    if not session_id:
+        session_result = body.get("sessionResult", {})
+        session_id = session_result.get("sessionId")
+        
     company_name = body.get("companyName")
+    
     if not session_id or not company_name:
         return error_response("sessionId and companyName are required", 400)
 
