@@ -47,6 +47,7 @@ def lambda_handler(event: dict, context) -> dict:
     """
     try:
         body = parse_body(event)
+        logger.info(f"ScrapeCompany received body: {body}")
     except (ValueError, Exception) as e:
         return error_response(f"Invalid request body: {e}", 400)
 

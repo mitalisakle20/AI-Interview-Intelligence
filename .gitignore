@@ -42,3 +42,6 @@ samconfig.toml.backup
 # --- Logs ---
 *.log
 npm-debug.log*
+
+history.json
+session_data.json
